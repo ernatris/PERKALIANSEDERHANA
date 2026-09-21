@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1d3fbb">
+<title>Jago Kali Bagi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kertas:#fbfdff; --kotak:#d3e6f7;
+  --tinta:#1b2a49; --pena:#1d3fbb;
+  --pensil:#ffc21a; --penghapus:#ff7a8a;
+  --benar:#22b573; --salah:#ef476f;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  font-family:'Baloo 2',system-ui,'Segoe UI',Roboto,sans-serif;
+  color:var(--tinta);
+  background-color:var(--kertas);
+  background-image:linear-gradient(var(--kotak) 1px,transparent 1px),linear-gradient(90deg,var(--kotak) 1px,transparent 1px);
+  background-size:26px 26px;
+  overscroll-behavior:none;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;
+}
+input{-webkit-user-select:text;user-select:text}
+#app{max-width:480px;margin:0 auto;min-height:100%}
+.screen{display:none;flex-direction:column;gap:12px;min-height:100dvh;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+.screen.active{display:flex}
+
+h1{margin:0;font-size:clamp(38px,12vw,54px);line-height:.95;font-weight:800;color:var(--pena);letter-spacing:-.5px}
+h2{margin:0;font-size:26px;font-weight:800}
+p{margin:0}
+.muted{color:#4a5b7d;font-size:15px;font-weight:500}
+
+.card{background:#fff;border:3px solid var(--tinta);border-radius:var(--r);box-shadow:5px 5px 0 var(--tinta);padding:14px}
+label{display:block;font-weight:700;font-size:15px;margin-bottom:10px}
+input[type=text],input[type=tel]{
+  width:100%;margin-top:4px;padding:11px 12px;font:600 18px 'Baloo 2',sans-serif;color:var(--tinta);
+  border:3px solid var(--tinta);border-radius:10px;background:#fffdf3;outline:none}
+input:focus{border-color:var(--pena);box-shadow:0 0 0 3px #c9d6ff}
+.gt{font-weight:800;margin:6px 0 6px;font-size:15px}
+
+.btn{font:800 19px 'Baloo 2',sans-serif;color:var(--tinta);background:#fff;border:3px solid var(--tinta);
+  border-radius:12px;padding:11px 14px;box-shadow:0 4px 0 var(--tinta);cursor:pointer;width:100%;
+  transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--tinta)}
+.btn.utama{background:var(--pensil);font-size:24px;padding:13px}
+.btn.wa{background:#25d366}
+.btn.biru{background:var(--pena);color:#fff}
+.btn:disabled{opacity:.5}
+.baris{display:flex;gap:10px}
+.baris>*{flex:1}
+
+.pilih{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pilih button{font:700 16px 'Baloo 2',sans-serif;line-height:1.15;color:var(--tinta);background:#fff;border:3px solid var(--tinta);
+  border-radius:12px;padding:9px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0}
+.pilih button b{font-size:26px;font-weight:800;line-height:1.1}
+.pilih button small{font-size:12px;font-weight:500;color:#4a5b7d}
+.pilih button.on{background:var(--pensil);box-shadow:3px 3px 0 var(--tinta)}
+.aturan{font-size:14px;font-weight:600;background:#eef4ff;border:2px dashed var(--pena);border-radius:10px;padding:8px 10px;margin:4px 0 12px}
+
+.sndbtn{border:3px solid var(--tinta);background:#fff;border-radius:10px;font-size:18px;padding:2px 9px;cursor:pointer;line-height:1.3}
+
+/* ---------- Permainan ---------- */
+#game{height:100dvh;min-height:0;gap:10px;overflow:hidden}
+.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:10px}
+.stat{background:#fff;border:3px solid var(--tinta);border-radius:12px;padding:4px 10px;display:flex;flex-direction:column;justify-content:center}
+.stat span{font-size:13px;font-weight:700;color:#4a5b7d;line-height:1}
+.stat b{font-size:30px;line-height:1.05;font-weight:800}
+.stat:last-child{text-align:right}
+.timer{min-width:96px;text-align:center;background:var(--pensil);border:3px solid var(--tinta);border-radius:12px;box-shadow:3px 3px 0 var(--tinta);padding:2px 10px}
+.timer b{display:block;font-size:44px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.timer small{font-size:12px;font-weight:700;line-height:1}
+.timer.bahaya{background:var(--salah);color:#fff;animation:denyut .5s ease-in-out infinite alternate}
+@keyframes denyut{to{transform:scale(1.07)}}
+
+/* Batang waktu berbentuk pensil */
+.pensil{display:flex;align-items:center;height:26px;filter:drop-shadow(2px 2px 0 var(--tinta))}
+.pensil .hapus{width:16px;height:100%;background:var(--penghapus);border:3px solid var(--tinta);border-right:0;border-radius:8px 0 0 8px}
+.pensil .badan{flex:1;height:100%;border-top:3px solid var(--tinta);border-bottom:3px solid var(--tinta);position:relative;background:#fff}
+.pensil .isi{position:absolute;inset:0 auto 0 0;width:100%;background:var(--pensil);transition:width .15s linear,background .3s;
+  background-image:repeating-linear-gradient(90deg,transparent 0 22px,rgba(27,42,73,.18) 22px 24px)}
+.pensil .ujung{width:0;height:0;border-top:13px solid transparent;border-bottom:13px solid transparent;border-left:20px solid var(--tinta);position:relative}
+.pensil.bahaya .isi{background-color:var(--penghapus)}
+
+.beruntun{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.beruntun .dots{display:flex;gap:6px}
+.beruntun .dots i{width:20px;height:20px;border-radius:50%;border:3px solid var(--tinta);background:#fff;transition:background .15s,transform .15s}
+.beruntun .dots i.on{background:var(--benar);transform:scale(1.15)}
+.beruntun .dots.penuh i{background:var(--pensil);animation:loncat .4s}
+@keyframes loncat{50%{transform:translateY(-6px) scale(1.25)}}
+.beruntun .hint{flex:1;color:#4a5b7d;font-weight:600}
+
+.soal{position:relative;background:#fff;border:3px solid var(--tinta);border-radius:var(--r);box-shadow:5px 5px 0 var(--tinta);
+  padding:12px 10px 10px;text-align:center}
+.soal.ok{background:#d9f7e8;border-color:var(--benar)}
+.soal.no{background:#ffe1e8;border-color:var(--salah);animation:geser .3s}
+@keyframes geser{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+#qtext{font-size:clamp(46px,15vw,72px);font-weight:800;line-height:1.05;letter-spacing:1px;font-variant-numeric:tabular-nums}
+#qtext .op{color:var(--pena);padding:0 .12em}
+.jawab{display:flex;justify-content:center;gap:8px;margin-top:6px;min-height:56px}
+.jawab .slot{width:46px;height:56px;border-bottom:5px solid var(--tinta);font-size:44px;font-weight:800;line-height:56px;color:var(--pena)}
+#msg{height:24px;font-weight:800;font-size:18px;color:var(--salah);margin-top:2px}
+
+.keypad{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:9px}
+.keypad button{font:800 clamp(28px,8vw,38px) 'Baloo 2',sans-serif;color:var(--tinta);background:#fff;border:3px solid var(--tinta);border-radius:14px;
+  box-shadow:0 4px 0 var(--tinta);cursor:pointer;touch-action:manipulation}
+.keypad button:active{transform:translateY(4px);box-shadow:none;background:var(--pensil)}
+.keypad button.fn{font-size:16px;background:#eef4ff}
+
+.pop{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;z-index:20;
+  background:var(--pensil);border:4px solid var(--tinta);border-radius:16px;box-shadow:6px 6px 0 var(--tinta);padding:10px 22px;
+  font-size:34px;font-weight:800;white-space:nowrap}
+.pop.tampil{animation:muncul .9s ease-out}
+@keyframes muncul{15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}75%{opacity:1;transform:translate(-50%,-60%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(1)}}
+
+.habis{position:fixed;inset:0;z-index:30;background:rgba(27,42,73,.75);display:none;align-items:center;justify-content:center}
+.habis.tampil{display:flex}
+.habis div{background:var(--pensil);border:4px solid var(--tinta);border-radius:18px;box-shadow:6px 6px 0 var(--tinta);padding:16px 30px;font-size:40px;font-weight:800;animation:muncul2 .35s ease-out}
+@keyframes muncul2{from{transform:scale(.6);opacity:0}}
+
+/* ---------- Hasil ---------- */
+.skorbesar{text-align:center}
+.skorbesar .emoji{font-size:56px;line-height:1}
+.skorbesar .angka{font-size:84px;font-weight:800;line-height:.95;color:var(--pena);font-variant-numeric:tabular-nums}
+.skorbesar .kata{font-weight:700;color:#4a5b7d}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.statgrid div{background:#eef4ff;border:2px solid var(--tinta);border-radius:10px;padding:4px;text-align:center}
+.statgrid b{display:block;font-size:26px;line-height:1.1}
+.statgrid span{font-size:12px;font-weight:700;color:#4a5b7d}
+.status{margin-top:10px;font-weight:700;font-size:15px;text-align:center;min-height:22px}
+.status.ok{color:var(--benar)} .status.err{color:var(--salah)}
+.status button{font:800 15px 'Baloo 2',sans-serif;border:2px solid var(--tinta);background:#fff;border-radius:8px;padding:2px 10px;margin-left:6px}
+
+/* ---------- Peringkat ---------- */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tabs button{font:700 14px 'Baloo 2',sans-serif;color:var(--tinta);background:#fff;border:3px solid var(--tinta);border-radius:10px;padding:6px 2px;cursor:pointer}
+.tabs button.on{background:var(--pensil)}
+.daftar{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.daftar li{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;background:#fff;border:3px solid var(--tinta);border-radius:12px;padding:6px 10px}
+.daftar li.aku{background:#fff6cf;box-shadow:3px 3px 0 var(--tinta)}
+.daftar .no{font-size:24px;font-weight:800;text-align:center}
+.daftar .nm{font-weight:800;font-size:18px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daftar .sk{font-size:13px;font-weight:600;color:#4a5b7d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daftar .pt{font-size:26px;font-weight:800;color:var(--pena);font-variant-numeric:tabular-nums}
+.kosong{text-align:center;padding:26px 8px;font-weight:700;color:#4a5b7d}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;background:var(--tinta);color:#fff;
+  padding:10px 18px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+.toast.tampil{opacity:1}
+
+@media (max-height:640px){
+  .soal{padding:6px} #qtext{font-size:44px} .jawab{min-height:46px} .jawab .slot{height:46px;line-height:46px;font-size:36px}
+  .timer b{font-size:34px} .stat b{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== BERANDA ===== -->
+  <section id="home" class="screen active">
+    <div style="padding:6px 2px 0">
+      <h1>Jago<br>Kali Bagi</h1>
+      <p class="muted" style="margin-top:6px">Jawab sebanyak mungkin dalam 60 detik!</p>
+    </div>
+    <div class="card">
+      <label>Nama kamu
+        <input id="nama" type="text" maxlength="40" placeholder="Tulis namamu" autocomplete="off" autocapitalize="words">
+      </label>
+      <label>Asal sekolah
+        <input id="sekolah" type="text" maxlength="60" placeholder="Tulis nama sekolahmu" autocomplete="off" autocapitalize="characters">
+      </label>
+
+      <div class="gt">Pilih permainan</div>
+      <div class="pilih" id="pilihMode">
+        <button data-v="kali"><b>×</b>Perkalian</button>
+        <button data-v="bagi"><b>÷</b>Pembagian</button>
+        <button data-v="campur"><b>×÷</b>Campuran</button>
+      </div>
+
+      <div class="gt" style="margin-top:12px">Pilih tingkat</div>
+      <div class="pilih" id="pilihLevel">
+        <button data-v="mudah">Mudah<small>angka 1–5</small></button>
+        <button data-v="sedang">Sedang<small>angka 1–10</small></button>
+        <button data-v="sulit">Sulit<small>angka 2–15</small></button>
+      </div>
+
+      <p class="aturan">Jawab benar 3 kali berturut-turut, waktu bertambah <b>10 detik</b>. Jawab salah, hitungan berturut-turut mulai dari awal.</p>
+
+      <button id="btnMulai" class="btn utama">Mulai main</button>
+    </div>
+    <div class="baris">
+      <button id="btnPeringkat" class="btn">Peringkat</button>
+      <button class="btn sndbtn-lg" id="btnBunyi" style="max-width:130px">Bunyi: nyala</button>
+    </div>
+  </section>
+
+  <!-- ===== PERMAINAN ===== -->
+  <section id="game" class="screen">
+    <div class="topbar">
+      <div class="stat"><span>Skor</span><b id="gSkor">0</b></div>
+      <div class="timer" id="timerBox"><b id="gWaktu">60</b><small>detik</small></div>
+      <div class="stat"><span>Benar</span><b id="gBenar">0</b></div>
+    </div>
+    <div class="pensil" id="pensil"><div class="hapus"></div><div class="badan"><div class="isi" id="gBar"></div></div><div class="ujung"></div></div>
+    <div class="beruntun">
+      <span>Berturut</span>
+      <div class="dots" id="dots"><i></i><i></i><i></i></div>
+      <span class="hint">3 benar = +10 detik</span>
+      <button class="sndbtn" id="btnBunyi2" aria-label="Bunyi">🔊</button>
+    </div>
+    <div class="soal" id="soal">
+      <div id="qtext">7 × 8</div>
+      <div class="jawab" id="jawab"></div>
+      <div id="msg"></div>
+    </div>
+    <div class="keypad" id="keypad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="del" class="fn">Hapus</button><button data-k="0">0</button><button data-k="skip" class="fn">Lewati</button>
+    </div>
+    <div class="pop" id="pop">+10 detik!</div>
+    <div class="habis" id="habis"><div>Waktu habis!</div></div>
+  </section>
+
+  <!-- ===== HASIL ===== -->
+  <section id="hasil" class="screen">
+    <div class="card skorbesar">
+      <div class="emoji" id="rEmoji">🎉</div>
+      <h2 id="rJudul">Hebat!</h2>
+      <div class="angka" id="rSkor">0</div>
+      <div class="kata" id="rNama"></div>
+      <div class="statgrid">
+        <div><b id="rBenar">0</b><span>Benar</span></div>
+        <div><b id="rSalah">0</b><span>Salah</span></div>
+        <div><b id="rRun">0</b><span>Berturut terbaik</span></div>
+      </div>
+      <div class="status" id="rStatus">Menyimpan skor…</div>
+    </div>
+    <div class="card">
+      <label style="margin-bottom:8px">Nomor WhatsApp guru
+        <input id="waGuru" type="tel" inputmode="tel" maxlength="20" placeholder="contoh: 08123456789">
+      </label>
+      <button id="btnWA" class="btn wa">Kirim ke WhatsApp guru</button>
+    </div>
+    <div class="baris">
+      <button id="btnRank2" class="btn">Peringkat</button>
+      <button id="btnLagi" class="btn utama" style="font-size:20px">Main lagi</button>
+    </div>
+    <button id="btnMenu" class="btn" style="font-size:16px;padding:8px">Ganti nama / permainan</button>
+  </section>
+
+  <!-- ===== PERINGKAT ===== -->
+  <section id="rank" class="screen">
+    <h2>Peringkat Global</h2>
+    <div class="tabs" id="tabs">
+      <button data-v="all" class="on">Semua</button>
+      <button data-v="kali">Kali</button>
+      <button data-v="bagi">Bagi</button>
+      <button data-v="campur">Campur</button>
+    </div>
+    <ul class="daftar" id="daftar"></ul>
+    <button id="btnKembali" class="btn biru" style="margin-top:auto">Kembali</button>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== PENGATURAN ================== */
+const CFG = {
+  API: 'api.php',
+  DURASI: 60,            // detik
+  BONUS: 10,             // detik tambahan
+  BERTURUT: 3,           // jumlah jawaban benar berturut-turut untuk bonus
+  WA_GURU_DEFAULT: '',   // isi nomor WA guru, mis. '6281234567890' (boleh dikosongkan)
+  POIN:  { mudah: 10, sedang: 15, sulit: 20 },
+  RANGE: { mudah: [1, 5], sedang: [1, 10], sulit: [2, 15] },
+  NAMA_MODE:  { kali: 'Perkalian', bagi: 'Pembagian', campur: 'Campuran' },
+  NAMA_LEVEL: { mudah: 'Mudah', sedang: 'Sedang', sulit: 'Sulit' }
+};
+
+const $ = id => document.getElementById(id);
+let G = null;               // status permainan
+let pref = { nama:'', sekolah:'', mode:'kali', level:'sedang', wa: CFG.WA_GURU_DEFAULT };
+let rankFrom = 'home';
+let hasilSimpan = null;
+
+/* ================== PENYIMPANAN LOKAL ================== */
+try { Object.assign(pref, JSON.parse(localStorage.getItem('kb_pref') || '{}')); } catch(e){}
+function simpanPref(){ try{ localStorage.setItem('kb_pref', JSON.stringify(pref)); }catch(e){} }
+
+/* ================== BUNYI (Web Audio API) ================== */
+let AC = null, bunyi = true;
+try { bunyi = localStorage.getItem('kb_bunyi') !== '0'; } catch(e){}
+function bukaAudio(){
+  try{
+    if(!AC){ const C = window.AudioContext || window.webkitAudioContext; if(C) AC = new C(); }
+    if(AC && AC.state === 'suspended') AC.resume();
+  }catch(e){}
+}
+function nada(f, d, tipe='sine', v=.25, tunda=0){
+  if(!bunyi || !AC) return;
+  const t = AC.currentTime + tunda, o = AC.createOscillator(), g = AC.createGain();
+  o.type = tipe; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(.0001, t);
+  g.gain.exponentialRampToValueAtTime(v, t + .012);
+  g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g); g.connect(AC.destination);
+  o.start(t); o.stop(t + d + .03);
+}
+const sfx = {
+  tombol: () => nada(520, .05, 'triangle', .12),
+  benar:  () => { nada(659,.12,'sine',.28); nada(880,.18,'sine',.28,.1); },
+  salah:  () => { nada(220,.25,'sawtooth',.18); nada(160,.3,'sawtooth',.18,.12); },
+  bonus:  () => [523,659,784,1047,1319].forEach((f,i)=>nada(f,.15,'square',.15,i*.09)),
+  detik:  () => nada(880, .07, 'square', .13),
+  alarm:  () => [0,.17,.34].forEach(d => nada(1100,.11,'square',.22,d)),
+  habis:  () => { [784,659,523].forEach((f,i)=>nada(f,.26,'triangle',.3,i*.22)); nada(262,.7,'triangle',.3,.7); },
+  mulai:  () => { nada(523,.1,'triangle',.25); nada(784,.16,'triangle',.25,.1); }
+};
+function aturIkonBunyi(){
+  $('btnBunyi').textContent = 'Bunyi: ' + (bunyi ? 'nyala' : 'mati');
+  $('btnBunyi2').textContent = bunyi ? '🔊' : '🔇';
+}
+function gantiBunyi(){
+  bunyi = !bunyi; bukaAudio();
+  try{ localStorage.setItem('kb_bunyi', bunyi ? '1' : '0'); }catch(e){}
+  aturIkonBunyi(); if(bunyi) sfx.tombol();
+}
+
+/* ================== UTILITAS TAMPILAN ================== */
+function tampil(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0, 0);
+}
+let toastT;
+function toast(t){
+  const el = $('toast'); el.textContent = t; el.classList.add('tampil');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('tampil'), 2200);
+}
+function pilihTombol(grupId, nilai){
+  document.querySelectorAll('#' + grupId + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === nilai));
+}
+const acak = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+/* ================== BERANDA ================== */
+$('nama').value = pref.nama; $('sekolah').value = pref.sekolah;
+pilihTombol('pilihMode', pref.mode); pilihTombol('pilihLevel', pref.level);
+aturIkonBunyi();
+
+$('pilihMode').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  pref.mode = b.dataset.v; pilihTombol('pilihMode', pref.mode); bukaAudio(); sfx.tombol();
+});
+$('pilihLevel').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  pref.level = b.dataset.v; pilihTombol('pilihLevel', pref.level); bukaAudio(); sfx.tombol();
+});
+$('btnBunyi').onclick = gantiBunyi;
+$('btnBunyi2').onclick = gantiBunyi;
+$('btnMulai').onclick = mulaiBaru;
+$('btnPeringkat').onclick = () => { bukaAudio(); rankFrom = 'home'; bukaPeringkat(pref.mode === 'campur' ? 'all' : 'all'); };
+
+function mulaiBaru(){
+  const nama = $('nama').value.replace(/\s+/g,' ').trim();
+  const sek = $('sekolah').value.replace(/\s+/g,' ').trim();
+  if(nama.length < 2){ toast('Tulis namamu dulu ya'); $('nama').focus(); return; }
+  if(sek.length < 3){ toast('Tulis asal sekolahmu dulu ya'); $('sekolah').focus(); return; }
+  pref.nama = nama; pref.sekolah = sek; simpanPref();
+  mulaiGame();
+}
+
+/* ================== SOAL ================== */
+function buatSoal(){
+  const [lo, hi] = CFG.RANGE[G.level];
+  let jenis = G.mode === 'campur' ? (Math.random() < .5 ? 'kali' : 'bagi') : G.mode;
+  let a, b, jawab, teks;
+  do {
+    if(jenis === 'kali'){
+      a = acak(lo, hi); b = acak(lo, hi); jawab = a * b;
+      teks = `${a}<span class="op">×</span>${b}`;
+    } else {
+      b = acak(Math.max(lo, 2), hi);   // pembagi minimal 2
+      jawab = acak(lo, hi);            // hasil bagi bilangan bulat
+      a = b * jawab;
+      teks = `${a}<span class="op">÷</span>${b}`;
+    }
+  } while(G.soal && G.soal.teks === teks);
+  return { teks, jawab };
+}
+
+function soalBerikut(){
+  G.soal = buatSoal(); G.input = ''; G.kunci = false;
+  $('qtext').innerHTML = G.soal.teks;
+  $('msg').textContent = '';
+  $('soal').className = 'soal';
+  gambarJawaban();
+}
+function gambarJawaban(){
+  const n = String(G.soal.jawab).length, box = $('jawab');
+  box.innerHTML = '';
+  for(let i = 0; i < n; i++){
+    const s = document.createElement('span'); s.className = 'slot'; s.textContent = G.input[i] || '';
+    box.appendChild(s);
+  }
+}
+function gambarTitik(k, penuh){
+  const d = $('dots'); d.classList.toggle('penuh', !!penuh);
+  d.querySelectorAll('i').forEach((el, i) => el.classList.toggle('on', i < k));
+}
+function gambarHUD(){
+  $('gSkor').textContent = G.benar * CFG.POIN[G.level];
+  $('gBenar').textContent = G.benar;
+}
+
+/* ================== PERMAINAN ================== */
+function mulaiGame(){
+  bukaAudio(); sfx.mulai();
+  G = {
+    nama: pref.nama, sekolah: pref.sekolah, mode: pref.mode, level: pref.level,
+    benar: 0, salah: 0, run: 0, maxRun: 0, bonus: 0,
+    berakhir: Date.now() + CFG.DURASI * 1000,
+    detikTerakhir: null, peringatan: false,
+    selesai: false, kunci: false, soal: null, input: '',
+    token: null, mengambilToken: false
+  };
+  hasilSimpan = null;
+  tampil('game'); aturIkonBunyi();
+  gambarHUD(); gambarTitik(0); soalBerikut();
+  ambilToken(G);
+  G.timer = setInterval(detak, 100);
+  detak();
+}
+
+async function ambilToken(g){
+  if(g.token || g.mengambilToken) return;
+  g.mengambilToken = true;
+  try{ const r = await api('start'); if(r.ok) g.token = r.token; }catch(e){}
+  g.mengambilToken = false;
+}
+
+function detak(){
+  const g = G; if(!g || g.selesai) return;
+  const sisa = Math.max(0, g.berakhir - Date.now());
+  const detik = Math.ceil(sisa / 1000);
+  if(detik !== g.detikTerakhir){ g.detikTerakhir = detik; tiapDetik(g, detik); }
+  const persen = Math.min(100, sisa / (CFG.DURASI * 1000) * 100);
+  $('gBar').style.width = persen + '%';
+  if(!g.token) ambilToken(g);
+  if(sisa <= 0) akhiriGame();
+}
+function tiapDetik(g, detik){
+  $('gWaktu').textContent = detik;
+  const bahaya = detik <= 10;
+  $('timerBox').classList.toggle('bahaya', bahaya);
+  $('pensil').classList.toggle('bahaya', bahaya);
+  if(detik > 10) g.peringatan = false;
+  if(bahaya && detik > 0){
+    if(detik === 10 && !g.peringatan){ g.peringatan = true; sfx.alarm(); }   // alarm saat sisa 10 detik
+    else sfx.detik();                                                        // tik tiap detik sampai habis
+  }
+}
+
+function tekan(k){
+  const g = G; if(!g || g.selesai || g.kunci) return;
+  bukaAudio();
+  if(k === 'del'){ g.input = g.input.slice(0, -1); sfx.tombol(); gambarJawaban(); return; }
+  if(k === 'skip'){ g.run = 0; gambarTitik(0); sfx.tombol(); soalBerikut(); return; }
+  const n = String(g.soal.jawab).length;
+  if(g.input.length >= n) return;
+  g.input += k; sfx.tombol(); gambarJawaban();
+  if(g.input.length === n) periksa();
+}
+
+function periksa(){
+  const g = G, benar = Number(g.input) === g.soal.jawab;
+  g.kunci = true;
+  if(benar){
+    g.benar++; g.run++; g.maxRun = Math.max(g.maxRun, g.run);
+    $('soal').className = 'soal ok'; sfx.benar();
+    const dapatBonus = g.run % CFG.BERTURUT === 0;
+    if(dapatBonus){
+      g.berakhir += CFG.BONUS * 1000; g.bonus++;
+      gambarTitik(3, true); setTimeout(() => { if(G === g) gambarTitik(0); }, 500);
+      setTimeout(() => sfx.bonus(), 180);
+      const p = $('pop'); p.textContent = `+${CFG.BONUS} detik!`;
+      p.classList.remove('tampil'); void p.offsetWidth; p.classList.add('tampil');
+      detak();
+    } else {
+      gambarTitik(g.run % CFG.BERTURUT);
+    }
+    gambarHUD();
+    setTimeout(() => { if(G === g && !g.selesai) soalBerikut(); }, dapatBonus ? 420 : 240);
+  } else {
+    g.salah++; g.run = 0; gambarTitik(0);
+    $('soal').className = 'soal no'; sfx.salah();
+    if(navigator.vibrate) navigator.vibrate(120);
+    $('msg').textContent = 'Jawaban: ' + g.soal.jawab;
+    setTimeout(() => { if(G === g && !g.selesai) soalBerikut(); }, 950);
+  }
+}
+
+$('keypad').addEventListener('pointerdown', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  e.preventDefault(); tekan(b.dataset.k);
+});
+document.addEventListener('keydown', e => {
+  if(!G || G.selesai || !$('game').classList.contains('active')) return;
+  if(/^[0-9]$/.test(e.key)) tekan(e.key);
+  else if(e.key === 'Backspace') tekan('del');
+});
+
+function akhiriGame(){
+  const g = G; if(!g || g.selesai) return;
+  g.selesai = true; clearInterval(g.timer);
+  $('gWaktu').textContent = 0; $('gBar').style.width = '0%';
+  sfx.habis();
+  $('habis').classList.add('tampil');
+  setTimeout(() => { $('habis').classList.remove('tampil'); tampilHasil(g); }, 1500);
+}
+
+/* ================== HASIL & SIMPAN ================== */
+function tampilHasil(g){
+  const skor = g.benar * CFG.POIN[g.level];
+  const [emoji, judul] = g.benar >= 15 ? ['🏆','Juara!'] : g.benar >= 8 ? ['🌟','Hebat!'] : g.benar >= 3 ? ['👍','Bagus!'] : ['💪','Ayo coba lagi!'];
+  $('rEmoji').textContent = emoji; $('rJudul').textContent = judul;
+  $('rSkor').textContent = skor;
+  $('rNama').textContent = `${g.nama} · ${g.sekolah}`;
+  $('rBenar').textContent = g.benar; $('rSalah').textContent = g.salah; $('rRun').textContent = g.maxRun;
+  $('waGuru').value = pref.wa || '';
+  tampil('hasil');
+  simpanSkor(g);
+}
+
+function setStatus(html, kelas){
+  const s = $('rStatus'); s.className = 'status ' + (kelas || ''); s.innerHTML = html;
+}
+
+async function simpanSkor(g){
+  setStatus('Menyimpan skor…');
+  try{
+    if(!g.token){ await ambilToken(g); }
+    if(!g.token) throw new Error('Belum tersambung ke server');
+    const r = await api('save', {
+      token: g.token, nama: g.nama, sekolah: g.sekolah, mode: g.mode, level: g.level,
+      benar: g.benar, salah: g.salah, streak_max: g.maxRun
+    });
+    hasilSimpan = r;
+    setStatus(`Tersimpan. Peringkat global: <b>#${r.rank_all}</b> dari ${r.total_all} pemain`, 'ok');
+  }catch(e){
+    setStatus(`Skor belum tersimpan: ${e.message}<button id="btnUlang">Simpan lagi</button>`, 'err');
+    $('btnUlang').onclick = () => simpanSkor(g);
+  }
+}
+
+async function api(aksi, body, tambahan = ''){
+  const opt = { cache: 'no-store' };
+  if(body){ opt.method = 'POST'; opt.headers = {'Content-Type':'application/json'}; opt.body = JSON.stringify(body); }
+  const res = await fetch(`${CFG.API}?action=${aksi}${tambahan}`, opt);
+  let data; try{ data = await res.json(); }catch(e){ throw new Error('Server tidak menjawab'); }
+  if(!data.ok) throw new Error(data.error || 'Gagal');
+  return data;
+}
+
+/* ===== Kirim ke WhatsApp guru ===== */
+function normalisasiWA(n){
+  n = String(n || '').replace(/\D+/g, '');
+  if(n.startsWith('0')) n = '62' + n.slice(1);
+  else if(n.startsWith('8')) n = '62' + n;
+  return n;
+}
+$('btnWA').onclick = () => {
+  const g = G; if(!g) return;
+  const nomor = normalisasiWA($('waGuru').value);
+  if($('waGuru').value.trim() && nomor.length < 10){ toast('Nomor WhatsApp belum benar'); return; }
+  pref.wa = nomor; simpanPref();
+  const skor = g.benar * CFG.POIN[g.level];
+  const baris = [
+    'Halo Bapak/Ibu Guru 👋',
+    `Saya *${g.nama}* dari *${g.sekolah}* sudah bermain Jago Kali Bagi.`,
+    '',
+    `🎮 Permainan: ${CFG.NAMA_MODE[g.mode]} (${CFG.NAMA_LEVEL[g.level]})`,
+    `⭐ Skor: ${skor}`,
+    `✅ Benar: ${g.benar}`,
+    `❌ Salah: ${g.salah}`,
+    `🔥 Berturut-turut terbaik: ${g.maxRun}`
+  ];
+  if(hasilSimpan) baris.push(`🏆 Peringkat global: #${hasilSimpan.rank_all} dari ${hasilSimpan.total_all} pemain`);
+  const url = `https://wa.me/${nomor}?text=${encodeURIComponent(baris.join('\n'))}`;
+  window.open(url, '_blank');
+};
+
+$('btnLagi').onclick = () => { $('btnMulai').click(); };
+$('btnMenu').onclick = () => { $('nama').value = pref.nama; $('sekolah').value = pref.sekolah; tampil('home'); };
+$('btnRank2').onclick = () => { rankFrom = 'hasil'; bukaPeringkat('all'); };
+
+/* ================== PERINGKAT ================== */
+async function bukaPeringkat(mode){
+  tampil('rank');
+  muatPeringkat(mode);
+}
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  muatPeringkat(b.dataset.v);
+});
+$('btnKembali').onclick = () => tampil(rankFrom);
+
+async function muatPeringkat(mode){
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === mode));
+  const ul = $('daftar');
+  ul.innerHTML = '<li style="display:block;text-align:center;font-weight:700">Memuat…</li>';
+  try{
+    const r = await api('rank', null, `&mode=${mode}&limit=20`);
+    ul.innerHTML = '';
+    if(!r.data.length){ ul.innerHTML = '<div class="kosong">Belum ada skor. Jadilah yang pertama!</div>'; return; }
+    const akuN = (pref.nama || '').toLowerCase(), akuS = (pref.sekolah || '').toLowerCase();
+    r.data.forEach((d, i) => {
+      const li = document.createElement('li');
+      if(d.nama.toLowerCase() === akuN && d.sekolah.toLowerCase() === akuS) li.className = 'aku';
+      const no = document.createElement('div'); no.className = 'no';
+      no.textContent = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      const tengah = document.createElement('div');
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = d.nama;
+      const sk = document.createElement('div'); sk.className = 'sk'; sk.textContent = d.sekolah;
+      tengah.append(nm, sk);
+      const pt = document.createElement('div'); pt.className = 'pt'; pt.textContent = d.skor;
+      li.append(no, tengah, pt); ul.appendChild(li);
+    });
+  }catch(e){
+    ul.innerHTML = '';
+    const d = document.createElement('div'); d.className = 'kosong'; d.textContent = 'Peringkat belum bisa dimuat: ' + e.message;
+    ul.appendChild(d);
+  }
+}
+</script>
+</body>
+</html>
